@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI SEO Meta Tag Generator</title>
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        background: #f5f7fa;
+        color: #333;
+        max-width: 900px;
+        margin: auto;
+        padding: 20px;
+    }
+    h1 {
+        text-align: center;
+        color: #1a73e8;
+    }
+    .input-group {
+        margin-bottom: 20px;
+    }
+    label {
+        font-weight: bold;
+    }
+    input, textarea {
+        width: 100%;
+        padding: 10px;
+        margin-top: 5px;
+        font-size: 14px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+    }
+    .char-count {
+        font-size: 12px;
+        color: gray;
+        text-align: right;
+    }
+    .preview {
+        background: white;
+        padding: 20px;
+        border-radius: 6px;
+        margin-top: 20px;
+        border: 1px solid #ccc;
+    }
+    .google-title {
+        color: #1a0dab;
+        font-size: 18px;
+    }
+    .google-url {
+        color: #006621;
+        font-size: 14px;
+    }
+    .google-desc {
+        font-size: 13px;
+        color: #545454;
+    }
+    button {
+        background: #1a73e8;
+        color: white;
+        padding: 10px 15px;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+        margin-right: 5px;
+    }
+    button:hover {
+        background: #0f5ec7;
+    }
+</style>
+</head>
+<body>
+
+<h1>AI SEO Meta Tag Generator</h1>
+
+<div class="input-group">
+    <label>Meta Title:</label>
+    <input type="text" id="title" maxlength="70" placeholder="Enter your page title">
+    <div class="char-count" id="titleCount">0 / 60 characters</div>
+</div>
+
+<div class="input-group">
+    <label>Meta Description:</label>
+    <textarea id="description" maxlength="170" placeholder="Enter your page description"></textarea>
+    <div class="char-count" id="descCount">0 / 160 characters</div>
+</div>
+
+<div class="input-group">
+    <label>Page URL:</label>
+    <input type="text" id="url" placeholder="https://example.com">
+</div>
+
+<button onclick="generateMeta()">Copy Meta Tags</button>
+<button onclick="suggestSEO()">Suggest SEO Improvements (AI)</button>
+
+<div class="preview">
+    <div class="google-title" id="previewTitle">Example Page Title</div>
+    <div class="google-url" id="previewURL">www.example.com</div>
+    <div class="google-desc" id="previewDesc">This is an example of a Google search result description.</div>
+</div>
+
+<script>
+// Paste your OpenAI API key here ↓
+const OPENAI_API_KEY = "YOUR_API_KEY_HERE";
+
+function updatePreview() {
+    let title = document.getElementById("title").value || "Example Page Title";
+    let desc = document.getElementById("description").value || "This is an example of a Google search result description.";
+    let url = document.getElementById("url").value || "www.example.com";
+
+    document.getElementById("previewTitle").textContent = title;
+    document.getElementById("previewDesc").textContent = desc;
+    document.getElementById("previewURL").textContent = url.replace(/^https?:\/\//, '');
+
+    document.getElementById("titleCount").textContent = `${title.length} / 60 characters`;
+    document.getElementById("descCount").textContent = `${desc.length} / 160 characters`;
+
+    document.getElementById("titleCount").style.color = title.length > 60 ? "red" : "gray";
+    document.getElementById("descCount").style.color = desc.length > 160 ? "red" : "gray";
+}
+
+function generateMeta() {
+    let title = document.getElementById("title").value;
+    let desc = document.getElementById("description").value;
+    let metaTags = `<title>${title}</title>\n<meta name="description" content="${desc}">`;
+
+    navigator.clipboard.writeText(metaTags).then(() => {
+        alert("Meta tags copied to clipboard!");
+    });
+}
+
+async function suggestSEO() {
+    let title = document.getElementById("title").value || "Example Title";
+    let desc = document.getElementById("description").value || "Example description.";
+
+    let prompt = `Rewrite the following meta title and description to be more SEO-friendly while keeping them under the character limits (Title: 60 chars, Description: 160 chars). 
+    Title: ${title}
+    Description: ${desc}`;
+
+    try {
+        let response = await fetch("https://api.openai.com/v1/chat/completions", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${OPENAI_API_KEY}`
+            },
+            body: JSON.stringify({
+                model: "gpt-3.5-turbo",
+                messages: [{ role: "user", content: prompt }],
+                max_tokens: 100
+            })
+        });
+
+        let data = await response.json();
+        let result = data.choices[0].message.content.split("\n");
+
+        // Try to parse AI output
+        if (result.length >= 2) {
+            document.getElementById("title").value = result[0].replace("Title: ", "").trim();
+            document.getElementById("description").value = result[1].replace("Description: ", "").trim();
+        } else {
+            alert("AI suggestion failed. Please try again.");
+        }
+
+        updatePreview();
+
+    } catch (error) {
+        alert("Error fetching AI suggestions: " + error);
+    }
+}
+
+document.getElementById("title").addEventListener("input", updatePreview);
+document.getElementById("description").addEventListener("input", updatePreview);
+document.getElementById("url").addEventListener("input", updatePreview);
+
+updatePreview();
+</script>
+
+</body>
+</html>
